@@ -278,14 +278,3 @@ function updatePagination() {
 // Loading State
 function showLoading(show) {
     loadingIndicator.classList.toggle('hidden', !show);
-    searchResults.classList.toggle('hidden', show);
-}
-
-// Display Error
-function displayError(message) {
-    searchResults.innerHTML = `
-        <div class="text-red-500 p-4 text-center">
-            <i class="fas fa-exclamation-circle"></i> ${message}
-        </div>
-    `;
-}

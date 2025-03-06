@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Search App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="font-roboto bg-gray-100">
+    <header class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">GitHub Search App</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="#" class="hover:underline">Home</a></li>
+                    <li><a href="#" class="hover:underline">About</a></li>
+                    <li><a href="#" class="hover:underline">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main class="container mx-auto p-4">
+        <section class="bg-white p-6 rounded shadow-md mb-6">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <h2 class="text-xl font-bold mb-4">GitHub API Token</h2>
+                    <div class="flex space-x-2 mb-2">
+                        <input type="password" id="githubToken" placeholder="Enter your GitHub API token" 
+                               class="flex-1 p-2 border border-gray-300 rounded">
+                        <button id="validateTokenBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            Validate & Save
+                        </button>
+                    </div>
+                    <div id="tokenStatus" class="text-sm"></div>
+                </div>
+                <button id="tokenInfoBtn" class="text-gray-500 hover:text-gray-700 ml-4">
+                    <i class="fas fa-info-circle text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Token Info Modal -->
+            <div id="tokenInfoModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white p-6 rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold">About GitHub API Token</h3>
+                        <button class="tokenInfoCloseBtn text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-blue-50 p-4 rounded">
+                            <h4 class="font-semibold text-blue-800 mb-2">How to get a GitHub Token:</h4>
+                            <ol class="list-decimal list-inside space-y-2 text-blue-900">
+                                <li>Go to <a href="https://github.com/settings/tokens" target="_blank" class="text-blue-600 hover:underline">GitHub Token Settings</a></li>
+                                <li>Click "Generate new token" → "Generate new token (classic)"</li>
+                                <li>Add a note (e.g., "Repository Search")</li>
+                                <li>Select scopes:
+                                    <ul class="list-disc list-inside ml-4 mt-1">
+                                        <li>repo (Full control of private repositories)</li>
+                                        <li>read:packages (Access packages)</li>
+                                    </ul>
+                                </li>
+                                <li>Click "Generate token" at the bottom</li>
+                                <li>Copy the token and paste it here</li>
+                            </ol>
+                        </div>
+
+                        <div class="bg-yellow-50 p-4 rounded">
+                            <h4 class="font-semibold text-yellow-800 mb-2">Benefits of using a GitHub Token:</h4>
+                            <ul class="list-disc list-inside space-y-1 text-yellow-900">
+                                <li>Access to private repositories</li>
+                                <li>Higher API rate limits</li>
+                                <li>Ability to download repository contents</li>
+                                <li>Enhanced search capabilities</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-gray-50 p-4 rounded">
+                            <p class="text-gray-700">
+                                <i class="fas fa-shield-alt text-gray-600 mr-2"></i>
+                                Your token will be stored securely in your browser's local storage and is only used for API authentication.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white p-6 rounded shadow-md">
+            <h2 class="text-xl font-bold mb-4">Search GitHub</h2>
+            <form id="searchForm" class="flex space-x-4 items-center">
+                <div>
+                    <label for="search" class="block text-gray-700">Search Keyword</label>
+                    <input type="text" id="search" name="search" class="w-full p-2 border border-gray-300 rounded" required>
+                </div>
+                <div>
+                    <label for="type" class="block text-gray-700">Search Type</label>
+                    <select id="type" name="type" class="w-full p-2 border border-gray-300 rounded">
+                        <option value="repositories">Repositories</option>
+                        <option value="code">Code</option>
+                        <option value="commits">Commits</option>
+                    </select>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded mt-6 hover:bg-blue-700">Search</button>
+            </form>
+        </section>
+        <section class="mt-8">
+            <h2 class="text-xl font-bold mb-4">Search Results</h2>
+            <div id="resultsContainer" class="bg-white p-6 rounded shadow-md">
+                <div class="flex justify-between items-center mb-4">
+                    <label for="resultsPerPage" class="block text-gray-700">Results per page:</label>
+                    <select id="resultsPerPage" name="resultsPerPage" class="p-2 border border-gray-300 rounded">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+                <div id="loadingIndicator" class="hidden text-center py-4">
+                    <i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i>
+                </div>
+                <ul id="searchResults" class="space-y-4">
+                    <!-- Results will be dynamically inserted here -->
+                </ul>
+                <div id="pagination" class="mt-4 flex justify-between items-center">
+                    <div class="flex space-x-2">
+                        <button id="prevPage" class="text-blue-600 hover:underline disabled:opacity-50">Previous</button>
+                        <span id="pageInfo">Page 1 of 1</span>
+                        <button id="nextPage" class="text-blue-600 hover:underline disabled:opacity-50">Next</button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label for="goToPage" class="block text-gray-700">Go to page:</label>
+                        <input type="number" id="goToPage" name="goToPage" class="w-16 p-2 border border-gray-300 rounded" min="1">
+                        <button id="goToPageBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Go</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer class="bg-gray-800 text-white p-4 mt-8">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2023 GitHub Search App. All rights reserved.</p>
+        </div>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>

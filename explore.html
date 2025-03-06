@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repository Explorer - GitHub Search App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="font-roboto bg-gray-100">
+    <header class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Repository Explorer</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="index.html" class="hover:underline">Back to Search</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4">
+        <div id="repoInfo" class="bg-white p-6 rounded shadow-md mb-4">
+            <div class="flex justify-between items-center">
+                <h2 id="repoName" class="text-2xl font-bold">Loading repository...</h2>
+                <div class="flex space-x-4">
+                    <a id="repoLink" href="#" target="_blank" class="text-blue-600 hover:underline">
+                        <i class="fab fa-github"></i> View on GitHub
+                    </a>
+                </div>
+            </div>
+            <p id="repoDescription" class="text-gray-700 mt-2">Loading description...</p>
+            <div class="flex space-x-4 mt-2">
+                <span id="repoStars" class="text-gray-700"><i class="fas fa-star"></i> 0</span>
+                <span id="repoForks" class="text-gray-700"><i class="fas fa-code-branch"></i> 0</span>
+                <span id="repoLanguage" class="text-gray-700"><i class="fas fa-code"></i> Unknown</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- File Browser -->
+            <div class="md:col-span-1 bg-white p-6 rounded shadow-md">
+                <h3 class="text-xl font-bold mb-4">Files</h3>
+                <div class="flex items-center mb-4">
+                    <button id="backButton" class="text-blue-600 hover:underline mr-2" disabled>
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <span id="currentPath" class="text-gray-700">/</span>
+                </div>
+                <div id="fileList" class="space-y-2">
+                    <!-- Files will be listed here -->
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Viewer -->
+            <div class="md:col-span-2 bg-white p-6 rounded shadow-md">
+            <div class="flex flex-col space-y-4 mb-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">Repository Search</h3>
+                    <div class="flex space-x-2">
+                        <button id="settingsBtn" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                            <i class="fas fa-cog"></i> Settings
+                        </button>
+                        <button id="downloadRepoBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            <i class="fas fa-download"></i> Download Repository
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Settings Modal -->
+                <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white p-6 rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold">Settings</h3>
+                            <button id="closeSettingsBtn" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="githubToken" class="block text-gray-700 mb-2 font-semibold">GitHub API Token</label>
+                            <input type="password" id="githubToken" placeholder="Enter your GitHub token" 
+                                   class="w-full p-2 border border-gray-300 rounded mb-2">
+                            
+                            <div class="bg-blue-50 p-4 rounded mb-4">
+                                <h4 class="font-semibold text-blue-800 mb-2">How to get a GitHub Token:</h4>
+                                <ol class="list-decimal list-inside space-y-2 text-blue-900">
+                                    <li>Go to <a href="https://github.com/settings/tokens" target="_blank" class="text-blue-600 hover:underline">GitHub Token Settings</a></li>
+                                    <li>Click "Generate new token" → "Generate new token (classic)"</li>
+                                    <li>Add a note (e.g., "Repository Search")</li>
+                                    <li>Select scopes:
+                                        <ul class="list-disc list-inside ml-4 mt-1">
+                                            <li>repo (Full control of private repositories)</li>
+                                            <li>read:packages (Access packages)</li>
+                                        </ul>
+                                    </li>
+                                    <li>Click "Generate token" at the bottom</li>
+                                    <li>Copy the token and paste it here</li>
+                                </ol>
+                            </div>
+                            
+                            <div class="bg-yellow-50 p-4 rounded mb-4">
+                                <p class="text-yellow-800">
+                                    <i class="fas fa-info-circle"></i>
+                                    A GitHub token is required for:
+                                </p>
+                                <ul class="list-disc list-inside ml-4 mt-1 text-yellow-800">
+                                    <li>Searching private repositories</li>
+                                    <li>Higher API rate limits</li>
+                                    <li>Downloading repository contents</li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-gray-50 p-4 rounded">
+                                <p class="text-gray-700">
+                                    <i class="fas fa-shield-alt text-gray-600"></i>
+                                    Your token will be stored securely in your browser's local storage and is only used for API authentication.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-2 pt-4 border-t">
+                            <button id="saveSettingsBtn" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                                Save Token
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex space-x-4">
+                    <input type="text" id="repoSearch" placeholder="Search in repository..." 
+                           class="flex-1 p-2 border border-gray-300 rounded">
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="useRegex" class="form-checkbox">
+                        <label for="useRegex">Use Regex</label>
+                    </div>
+                    <button id="repoSearchBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                        Search
+                    </button>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded">
+                    <h4 class="font-semibold mb-2">File Type Filters</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeJs" checked class="form-checkbox">
+                            <label for="includeJs">JavaScript (.js, .jsx)</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeTs" checked class="form-checkbox">
+                            <label for="includeTs">TypeScript (.ts, .tsx)</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeJson" checked class="form-checkbox">
+                            <label for="includeJson">JSON (.json)</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeMarkdown" checked class="form-checkbox">
+                            <label for="includeMarkdown">Markdown (.md)</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeYaml" checked class="form-checkbox">
+                            <label for="includeYaml">YAML (.yml, .yaml)</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="includeOther" checked class="form-checkbox">
+                            <label for="includeOther">Other Files</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="searchResults" class="space-y-4 mb-4 hidden">
+                    <h4 class="text-lg font-bold">Search Results</h4>
+                    <div id="resultsList" class="space-y-4"></div>
+                </div>
+
+                <div id="fileContent" class="font-mono text-sm bg-gray-50 p-4 rounded overflow-x-auto">
+                    Select a file to view its contents
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 mt-8">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2023 GitHub Search App. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Get repository name from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const repoFullName = urlParams.get('repo');
+
+        if (!repoFullName) {
+            window.location.href = 'index.html';
+        }
+
+        const GITHUB_API_URL = 'https://api.github.com';
+        let currentPath = '';
+        let fileContentCache = new Map();
+        let expandedResults = new Set();
+
+        // DOM Elements
+        const repoNameElement = document.getElementById('repoName');
+        const repoDescriptionElement = document.getElementById('repoDescription');
+        const repoStarsElement = document.getElementById('repoStars');
+        const repoForksElement = document.getElementById('repoForks');
+        const repoLanguageElement = document.getElementById('repoLanguage');
+        const repoLinkElement = document.getElementById('repoLink');
+        const fileListElement = document.getElementById('fileList');
+        const fileContentElement = document.getElementById('fileContent');
+        const currentPathElement = document.getElementById('currentPath');
+        const backButton = document.getElementById('backButton');
+        const repoSearchInput = document.getElementById('repoSearch');
+        const repoSearchBtn = document.getElementById('repoSearchBtn');
+        const searchResults = document.getElementById('searchResults');
+        const resultsList = document.getElementById('resultsList');
+        const useRegexCheckbox = document.getElementById('useRegex');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsModal = document.getElementById('settingsModal');
+        const githubTokenInput = document.getElementById('githubToken');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        const downloadRepoBtn = document.getElementById('downloadRepoBtn');
+
+        // File type filter checkboxes
+        const includeJsCheckbox = document.getElementById('includeJs');
+        const includeTsCheckbox = document.getElementById('includeTs');
+        const includeJsonCheckbox = document.getElementById('includeJson');
+        const includeMarkdownCheckbox = document.getElementById('includeMarkdown');
+        const includeYamlCheckbox = document.getElementById('includeYaml');
+        const includeOtherCheckbox = document.getElementById('includeOther');
+
+        // GitHub Token Management
+        let githubToken = localStorage.getItem('githubToken') || '';
+
+        function updateGitHubToken(token) {
+            githubToken = token;
+            localStorage.setItem('githubToken', token);
+        }
+
+        function getHeaders() {
+            const headers = new Headers();
+            if (githubToken) {
+                headers.append('Authorization', `token ${githubToken}`);
+            }
+            return headers;
+        }
+
+        // Settings Modal Handlers
+        settingsBtn.addEventListener('click', () => {
+            githubTokenInput.value = githubToken;
+            settingsModal.classList.remove('hidden');
+        });
+
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsModal.classList.add('hidden');
+        });
+
+        saveSettingsBtn.addEventListener('click', () => {
+            updateGitHubToken(githubTokenInput.value);
+            settingsModal.classList.add('hidden');
+        });
+
+        // Download Repository
+        downloadRepoBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${GITHUB_API_URL}/repos/${repoFullName}/zipball/main`, {
+                    headers: getHeaders()
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to download repository: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${repoFullName.replace('/', '-')}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Error downloading repository:', error);
+                showError(error.message || 'Failed to download repository');
+            }
+        });
+
+        // File Type Filtering
+        function shouldIncludeFile(filename) {
+            const ext = filename.toLowerCase().split('.').pop();
+            
+            if (!includeJsCheckbox.checked && (ext === 'js' || ext === 'jsx')) return false;
+            if (!includeTsCheckbox.checked && (ext === 'ts' || ext === 'tsx')) return false;
+            if (!includeJsonCheckbox.checked && ext === 'json') return false;
+            if (!includeMarkdownCheckbox.checked && ext === 'md') return false;
+            if (!includeYamlCheckbox.checked && (ext === 'yml' || ext === 'yaml')) return false;
+            if (!includeOtherCheckbox.checked && !['js', 'jsx', 'ts', 'tsx', 'json', 'md', 'yml', 'yaml'].includes(ext)) return false;
+            
+            return true;
+        }
+
+        // Repository Search
+        async function searchRepository() {
+            const query = repoSearchInput.value.trim();
+            if (!query) return;
+
+            try {
+                showLoading(true);
+                
+                // First, get all files in the repository recursively
+                async function getAllFiles(path = '') {
+                    const response = await fetch(`${GITHUB_API_URL}/repos/${repoFullName}/contents/${path}`, {
+                        headers: getHeaders()
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch repository contents: ${response.status}`);
+                    }
+                    
+                    const contents = await response.json();
+                    let files = [];
+                    
+                    for (const item of contents) {
+                        if (item.type === 'dir') {
+                            files = files.concat(await getAllFiles(item.path));
+                        } else if (item.type === 'file' && shouldIncludeFile(item.name)) {
+                            files.push(item);
+                        }
+                    }
+                    
+                    return files;
+                }
+
+                const allFiles = await getAllFiles();
+                let matchedFiles = [];
+
+                // Search through files
+                for (const file of allFiles) {
+                    try {
+                        const contentResponse = await fetch(file.download_url, {
+                            headers: getHeaders()
+                        });
+                        
+                        if (!contentResponse.ok) continue;
+                        
+                        const content = await contentResponse.text();
+                        let matches;
+
+                        if (useRegexCheckbox.checked) {
+                            try {
+                                const regex = new RegExp(query, 'gi');
+                                matches = content.match(regex);
+                            } catch (e) {
+                                throw new Error('Invalid regex pattern');
+                            }
+                        } else {
+                            matches = content.toLowerCase().includes(query.toLowerCase());
+                        }
+
+                        if (matches) {
+                            matchedFiles.push({
+                                ...file,
+                                matches: matches ? (Array.isArray(matches) ? matches.length : 1) : 0,
+                                content: content
+                            });
+                        }
+                    } catch (error) {
+                        console.error(`Error searching file ${file.path}:`, error);
+                    }
+                }
+
+                if (matchedFiles.length === 0) {
+                    resultsList.innerHTML = '<p class="text-gray-700">No results found.</p>';
+                    return;
+                }
+
+                // Sort by number of matches
+                matchedFiles.sort((a, b) => b.matches - a.matches);
+                displaySearchResults(matchedFiles);
+            } catch (error) {
+                console.error('Error searching repository:', error);
+                showError(error.message || 'Failed to search repository');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Show/Hide Loading State
+        function showLoading(show) {
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.id = 'loadingIndicator';
+            loadingIndicator.className = 'text-center py-4';
+            loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i>';
+
+            const existingIndicator = document.getElementById('loadingIndicator');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
+
+            if (show) {
+                searchResults.classList.add('hidden');
+                resultsList.parentNode.insertBefore(loadingIndicator, resultsList);
+            } else {
+                searchResults.classList.remove('hidden');
+            }
+        }
+
+        // Display Search Results
+        function displaySearchResults(items) {
+            searchResults.classList.remove('hidden');
+            resultsList.innerHTML = '';
+
+            if (!items || items.length === 0) {
+                resultsList.innerHTML = '<p class="text-gray-700">No results found.</p>';
+                return;
+            }
+
+            items.forEach((item, index) => {
+                const resultElement = createSearchResultElement(item, index);
+                resultsList.appendChild(resultElement);
+            });
+        }
+
+        // Create Search Result Element
+        function createSearchResultElement(item, index) {
+            const div = document.createElement('div');
+            div.className = 'border-b pb-4';
+            const isExpanded = expandedResults.has(index);
+
+            const rawUrl = item.html_url
+                .replace('github.com', 'raw.githubusercontent.com')
+                .replace('/blob/', '/');
+
+            // Get context around matches
+            let matchContext = '';
+            if (useRegexCheckbox.checked && item.content) {
+                const regex = new RegExp(repoSearchInput.value.trim(), 'gi');
+                const lines = item.content.split('\n');
+                const matchingLines = new Set();
+                
+                lines.forEach((line, i) => {
+                    if (regex.test(line)) {
+                        // Add surrounding lines for context
+                        for (let j = Math.max(0, i - 2); j <= Math.min(lines.length - 1, i + 2); j++) {
+                            matchingLines.add(j);
+                        }
+                    }
+                });
+
+                matchContext = Array.from(matchingLines)
+                    .sort((a, b) => a - b)
+                    .map(lineNum => {
+                        const line = lines[lineNum];
+                        return line.replace(regex, match => `<mark class="bg-yellow-200">${match}</mark>`);
+                    })
+                    .join('\n');
+            }
+
+            div.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-semibold">${item.path}</h3>
+                        <span class="text-sm text-gray-600">${item.matches} match${item.matches !== 1 ? 'es' : ''}</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <a href="${rawUrl}" target="_blank" class="text-blue-600 hover:underline" download>
+                            <i class="fas fa-download"></i> Raw
+                        </a>
+                        <button class="text-blue-600 hover:underline expand-btn" data-index="${index}">
+                            ${isExpanded ? 'Show Less' : 'Show More'}
+                        </button>
+                    </div>
+                </div>
+                <div class="text-gray-700 mt-2 ${isExpanded ? '' : 'line-clamp-3'}">
+                    ${useRegexCheckbox.checked ? 
+                        `<pre class="whitespace-pre-wrap text-sm">${matchContext || 'No context available'}</pre>` :
+                        `<p>${getFilePreview(item, isExpanded)}</p>`
+                    }
+                </div>
+            `;
+
+            const expandBtn = div.querySelector('.expand-btn');
+            expandBtn.addEventListener('click', () => toggleResultExpansion(index, div, item));
+
+            return div;
+        }
+
+        // Toggle Result Expansion
+        async function toggleResultExpansion(index, element, item) {
+            const isExpanded = expandedResults.has(index);
+            const expandBtn = element.querySelector('.expand-btn');
+            const preview = element.querySelector('p');
+
+            if (isExpanded) {
+                expandedResults.delete(index);
+                expandBtn.textContent = 'Show More';
+                preview.textContent = getFilePreview(item, false);
+            } else {
+                expandedResults.add(index);
+                expandBtn.textContent = 'Show Less';
+                try {
+                    const response = await fetch(item.url);
+                    const data = await response.json();
+                    preview.textContent = atob(data.content);
+                } catch (error) {
+                    console.error('Error loading file content:', error);
+                    preview.textContent = 'Error loading content';
+                }
+            }
+        }
+
+        // Get File Preview
+        function getFilePreview(item, isExpanded) {
+            if (isExpanded) {
+                return 'Loading full content...';
+            }
+            return `File: ${item.path}\nRepository: ${item.repository.full_name}`;
+        }
+
+        // Load repository information
+        async function loadRepoInfo() {
+            try {
+                const response = await fetch(`${GITHUB_API_URL}/repos/${repoFullName}`);
+                const data = await response.json();
+
+                repoNameElement.textContent = data.name;
+                repoDescriptionElement.textContent = data.description || 'No description available';
+                repoStarsElement.innerHTML = `<i class="fas fa-star"></i> ${data.stargazers_count}`;
+                repoForksElement.innerHTML = `<i class="fas fa-code-branch"></i> ${data.forks_count}`;
+                repoLanguageElement.innerHTML = `<i class="fas fa-code"></i> ${data.language || 'Unknown'}`;
+                repoLinkElement.href = data.html_url;
+
+                loadFiles();
+            } catch (error) {
+                console.error('Error loading repository info:', error);
+                showError('Failed to load repository information');
+            }
+        }
+
+        // Load files for current path
+        async function loadFiles(path = '') {
+            try {
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'text-center';
+                loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin text-blue-600"></i>';
+                fileListElement.innerHTML = '';
+                fileListElement.appendChild(loadingDiv);
+
+                const response = await fetch(`${GITHUB_API_URL}/repos/${repoFullName}/contents/${path}`);
+                
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('GitHub API rate limit exceeded. Please try again later or use a GitHub token.');
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`GitHub API error: ${response.status}`);
+                }
+
+                const files = await response.json();
+
+                fileListElement.innerHTML = '';
+                currentPath = path;
+                currentPathElement.textContent = '/' + path;
+                backButton.disabled = !path;
+
+                if (!Array.isArray(files)) {
+                    throw new Error('Invalid response format from GitHub API');
+                }
+
+                if (files.length === 0) {
+                    fileListElement.innerHTML = '<p class="text-gray-700 text-center">This directory is empty.</p>';
+                    return;
+                }
+
+                files.sort((a, b) => {
+                    // Directories first, then files
+                    if (a.type === 'dir' && b.type !== 'dir') return -1;
+                    if (a.type !== 'dir' && b.type === 'dir') return 1;
+                    return a.name.localeCompare(b.name);
+                }).forEach(file => {
+                    const item = document.createElement('div');
+                    item.className = 'p-2 hover:bg-gray-100 rounded';
+                    
+                    const icon = file.type === 'dir' ? 'fa-folder' : 'fa-file';
+                    const rawUrl = file.type === 'file' ? 
+                        file.html_url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/') :
+                        '#';
+
+                    const fileDiv = document.createElement('div');
+                    fileDiv.className = 'flex justify-between items-center';
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'cursor-pointer flex items-center';
+                    contentDiv.innerHTML = `
+                        <i class="fas ${icon} mr-2 ${file.type === 'dir' ? 'text-yellow-500' : 'text-gray-500'}"></i>
+                        ${file.name}
+                    `;
+                    
+                    if (file.type === 'dir') {
+                        contentDiv.onclick = () => loadFiles(file.path);
+                    } else {
+                        contentDiv.onclick = () => loadFileContent(file);
+                        const rawLink = document.createElement('a');
+                        rawLink.href = rawUrl;
+                        rawLink.className = 'text-blue-600 hover:underline ml-2';
+                        rawLink.target = '_blank';
+                        rawLink.download = '';
+                        rawLink.innerHTML = '<i class="fas fa-download"></i> Raw';
+                        fileDiv.appendChild(rawLink);
+                    }
+                    
+                    fileDiv.appendChild(contentDiv);
+                    item.appendChild(fileDiv);
+
+                    fileListElement.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Error loading files:', error);
+                fileListElement.innerHTML = `
+                    <div class="text-red-500 text-center">
+                        <i class="fas fa-exclamation-circle"></i>
+                        ${error.message || 'Failed to load repository files'}
+                    </div>
+                `;
+            }
+        }
+
+        // Load file content
+        async function loadFileContent(file) {
+            try {
+                fileContentElement.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i>
+                        <p class="mt-2">Loading file content...</p>
+                    </div>
+                `;
+
+                if (fileContentCache.has(file.path)) {
+                    displayFileContent(fileContentCache.get(file.path), file.name, file);
+                    return;
+                }
+
+                const response = await fetch(file.download_url);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load file: ${response.status}`);
+                }
+
+                const content = await response.text();
+                fileContentCache.set(file.path, content);
+                displayFileContent(content, file.name, file);
+            } catch (error) {
+                console.error('Error loading file content:', error);
+                fileContentElement.innerHTML = `
+                    <div class="text-red-500 text-center py-4">
+                        <i class="fas fa-exclamation-circle text-2xl"></i>
+                        <p class="mt-2">${error.message || 'Failed to load file content'}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display file content with syntax highlighting
+        function displayFileContent(content, fileName, file) {
+            const fileExtension = fileName.split('.').pop().toLowerCase();
+            const rawUrl = file.html_url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+            
+            const fileInfo = `
+                <div class="bg-gray-100 p-2 mb-4 rounded flex justify-between items-center">
+                    <div>
+                        <i class="fas fa-file text-gray-600"></i>
+                        <span class="ml-2 font-semibold">${fileName}</span>
+                    </div>
+                    <a href="${rawUrl}" class="text-blue-600 hover:underline" target="_blank" download>
+                        <i class="fas fa-download"></i> Download Raw
+                    </a>
+                </div>
+            `;
+            
+            fileContentElement.innerHTML = fileInfo + `<pre class="overflow-x-auto">${escapeHtml(content)}</pre>`;
+        }
+
+        // Utility functions
+        function showError(message) {
+            fileContentElement.innerHTML = `
+                <div class="text-red-500">
+                    <i class="fas fa-exclamation-circle"></i> ${message}
+                </div>
+            `;
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Event Listeners
+        backButton.addEventListener('click', () => {
+            const parentPath = currentPath.split('/').slice(0, -1).join('/');
+            loadFiles(parentPath);
+        });
+
+        repoSearchBtn.addEventListener('click', searchRepository);
+        repoSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchRepository();
+        });
+
+        // Initialize
+        loadRepoInfo();
+    </script>
+</body>
+</html>

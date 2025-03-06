@@ -1,0 +1,87 @@
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* File content styles */
+#fileContent pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 1rem;
+    line-height: 1.5;
+}
+
+/* Mark highlight animation */
+mark {
+    transition: background-color 0.2s ease;
+}
+
+mark:hover {
+    background-color: #fde68a;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    #fileContent pre {
+        max-height: 400px;
+    }
+}
+
+/* Disable button styles */
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* File list hover effects */
+#fileList div:hover {
+    transform: translateX(4px);
+    transition: transform 0.2s ease;
+}
+
+/* Current path overflow handling */
+#currentPath {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Search input focus styles */
+#searchInFile:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: #3b82f6;
+}

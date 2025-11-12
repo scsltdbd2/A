@@ -1,0 +1,156 @@
+openapi: 3.1.0
+info:
+  title: Genesys Cloud Session Management API
+  version: "1.0.0"
+  description: |-
+    A server-side API to manage authentication and session identity for a Genesys Cloud integration.
+    Handles OAuth 2.0 flows (Client Credentials, Authorization Code) and provides a consistent identity object for downstream use.
+servers:
+  - url: "/api"
+    description: "Local API Prefix"
+
+paths:
+  /session.php?action=config:
+    get:
+      summary: Get Current Configuration
+      description: Retrieves the saved session configuration, with the client secret masked for security.
+      tags: [Configuration]
+      responses:
+        '200':
+          description: Configuration retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigResponse'
+        '404':
+          description: Configuration not found.
+    post:
+      summary: Save Configuration
+      description: Saves connection settings to the session. This is the first step for any authentication flow.
+      tags: [Configuration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigPayload'
+      responses:
+        '200':
+          description: Configuration saved.
+        '400':
+          description: Invalid request body.
+    delete:
+      summary: Clear Configuration
+      description: Deletes all session data, including configuration, tokens, and identity. Effectively logs the user out.
+      tags: [Configuration]
+      responses:
+        '200':
+          description: Session cleared successfully.
+
+  /session.php?action=authorize:
+    get:
+      summary: Begin Authorization Code Flow
+      description: Redirects the user's browser to the Genesys Cloud authorization endpoint.
+      tags: [Authentication]
+      responses:
+        '302':
+          description: Redirecting to Genesys Cloud.
+
+  /session.php?action=callback:
+    get:
+      summary: Handle OAuth Callback
+      description: The redirect URI target for the Authorization Code flow. Exchanges the received code for a token.
+      tags: [Authentication]
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '302':
+          description: Success. Redirecting back to the main application UI.
+        '400':
+          description: Invalid request (e.g., missing code).
+
+  /session.php?action=token:
+    post:
+      summary: Get Token (Client Credentials)
+      description: Exchanges client credentials for an access token and resolves the identity.
+      tags: [Authentication]
+      responses:
+        '200':
+          description: Authentication successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Identity'
+        '500':
+          description: Failed to retrieve token or resolve identity.
+
+  /session.php?action=identity:
+    get:
+      summary: Get Identity
+      description: Retrieves the currently authenticated identity from the session.
+      tags: [Identity]
+      responses:
+        '200':
+          description: Identity object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Identity'
+        '404':
+          description: No identity found in session.
+
+  /session.php?action=test:
+    get:
+      summary: Test Authorization
+      description: Checks if the current session has a valid identity.
+      tags: [Identity]
+      responses:
+        '200':
+          description: Session is authorized.
+        '401':
+          description: Session is unauthorized.
+
+components:
+  schemas:
+    ConfigPayload:
+      type: object
+      properties:
+        regionCode: { type: string, example: "us-east-1" }
+        customBaseUrl: { type: string, nullable: true, example: "https://api.example.com" }
+        credentialType: { type: string, enum: ["client_credentials", "authorization_code"] }
+        clientId: { type: string }
+        clientSecret: { type: string }
+        redirectUri: { type: string, format: uri, nullable: true }
+      required: [regionCode, credentialType, clientId, clientSecret]
+
+    ConfigResponse:
+      type: object
+      properties:
+        regionCode: { type: string }
+        customBaseUrl: { type: string, nullable: true }
+        credentialType: { type: string }
+        clientId: { type: string }
+        clientSecret: { type: string, example: "****************" }
+
+    Identity:
+      type: object
+      properties:
+        subjectType: { type: string, enum: ["user", "client"] }
+        userId: { type: string, nullable: true }
+        username: { type: string, nullable: true }
+        email: { type: string, format: email, nullable: true }
+        orgId: { type: string, nullable: true }
+        orgName: { type: string, nullable: true }
+        scopes: { type: array, items: { type: string } }
+        regionCode: { type: string }
+        baseUrl: { type: string, format: uri }
+        token:
+          type: object
+          properties:
+            expiresAt: { type: string, format: "date-time" }
+            issuedAt: { type: "string", format: "date-time" }
+            secondsRemaining: { type: "integer" }
+      required: [subjectType, scopes, regionCode, baseUrl, token]

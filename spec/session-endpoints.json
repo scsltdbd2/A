@@ -1,0 +1,114 @@
+{
+  "apiPrefix": "/api",
+  "endpoints": [
+    {
+      "route": "/session.php?action=config",
+      "method": "POST",
+      "description": "Saves the Genesys Cloud connection configuration to the server-side session. Regenerates the session ID upon saving.",
+      "requestSchema": {
+        "type": "object",
+        "properties": {
+          "regionCode": { "type": "string", "example": "us-east-1" },
+          "customBaseUrl": { "type": "string", "nullable": true, "example": "https://api.example.com" },
+          "credentialType": { "type": "string", "enum": ["client_credentials", "authorization_code"] },
+          "clientId": { "type": "string" },
+          "clientSecret": { "type": "string" },
+          "redirectUri": { "type": "string", "nullable": true, "description": "Required for Authorization Code flow." }
+        },
+        "required": ["regionCode", "credentialType", "clientId", "clientSecret"]
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "Configuration saved successfully" }
+        }
+      }
+    },
+    {
+      "route": "/session.php?action=config",
+      "method": "GET",
+      "description": "Retrieves the current connection configuration, with the client secret masked.",
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "regionCode": { "type": "string" },
+          "customBaseUrl": { "type": "string", "nullable": true },
+          "credentialType": { "type": "string" },
+          "clientId": { "type": "string" },
+          "clientSecret": { "type": "string", "example": "****************" }
+        }
+      }
+    },
+    {
+      "route": "/session.php?action=config",
+      "method": "DELETE",
+      "description": "Clears all session data, including configuration, tokens, and identity.",
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "Configuration and session cleared" }
+        }
+      }
+    },
+    {
+      "route": "/session.php?action=authorize",
+      "method": "GET",
+      "description": "Initiates the OAuth Authorization Code flow by redirecting the user to the Genesys Cloud login page."
+    },
+    {
+      "route": "/session.php?action=callback",
+      "method": "GET",
+      "description": "Handles the redirect from Genesys Cloud after user authentication. Exchanges the authorization code for a token, resolves identity, and redirects back to the application.",
+      "queryParams": [
+        { "name": "code", "type": "string", "description": "The authorization code from Genesys Cloud." }
+      ]
+    },
+    {
+      "route": "/session.php?action=token",
+      "method": "POST",
+      "description": "Performs the OAuth Client Credentials flow to get a token and resolve identity.",
+      "responseSchema": { "$ref": "#/definitions/Identity" }
+    },
+    {
+      "route": "/session.php?action=identity",
+      "method": "GET",
+      "description": "Retrieves the parsed and normalized identity payload from the session.",
+      "responseSchema": { "$ref": "#/definitions/Identity" }
+    },
+    {
+      "route": "/session.php?action=test",
+      "method": "GET",
+      "description": "Performs a simple check to see if a valid token/identity exists in the session.",
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["Authorized", "Unauthorized"] }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "Identity": {
+      "type": "object",
+      "properties": {
+        "subjectType": { "type": "string", "enum": ["user", "client"] },
+        "userId": { "type": "string", "nullable": true },
+        "username": { "type": "string", "nullable": true },
+        "email": { "type": "string", "format": "email", "nullable": true },
+        "orgId": { "type": "string", "nullable": true },
+        "orgName": { "type": "string", "nullable": true },
+        "scopes": { "type": "array", "items": { "type": "string" } },
+        "regionCode": { "type": "string" },
+        "baseUrl": { "type": "string", "format": "uri" },
+        "token": {
+          "type": "object",
+          "properties": {
+            "expiresAt": { "type": "string", "format": "date-time" },
+            "issuedAt": { "type": "string", "format": "date-time" },
+            "secondsRemaining": { "type": "integer" }
+          }
+        }
+      }
+    }
+  }
+}
